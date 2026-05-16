@@ -43,35 +43,35 @@ export default async function CardioPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Cardio</h1>
-        <p className="text-sm text-gray-500">{todayMinutes} min today</p>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Cardio</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{todayMinutes} min today</p>
       </div>
 
       <CardioForm addSession={addSession} />
 
       <div className="mt-6 space-y-2">
         {sessions?.map(session => (
-          <div key={session.id} className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center justify-between">
+          <div key={session.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
             <div>
-              <span className="text-xs text-gray-400 mr-2">{session.date}</span>
-              <span className="text-sm font-medium text-gray-900">{session.activity}</span>
-              <span className="text-sm text-gray-500 ml-2">{session.duration_minutes} min</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500 mr-2">{session.date}</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{session.activity}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{session.duration_minutes} min</span>
               {session.distance_km != null && (
-                <span className="text-sm text-gray-400 ml-1">&middot; {session.distance_km} km</span>
+                <span className="text-sm text-gray-400 dark:text-gray-500 ml-1">&middot; {session.distance_km} km</span>
               )}
               {session.notes && (
-                <span className="text-sm text-gray-400 ml-1">&middot; {session.notes}</span>
+                <span className="text-sm text-gray-400 dark:text-gray-500 ml-1">&middot; {session.notes}</span>
               )}
             </div>
             <form action={deleteSession.bind(null, session.id)}>
-              <button type="submit" className="text-gray-300 hover:text-red-500 text-lg leading-none px-1">
+              <button type="submit" className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 text-lg leading-none px-1">
                 &times;
               </button>
             </form>
           </div>
         ))}
         {(!sessions || sessions.length === 0) && (
-          <p className="text-sm text-gray-400 text-center py-12">No cardio sessions logged yet.</p>
+          <p className="text-sm text-gray-400 dark:text-gray-600 text-center py-12">No cardio sessions logged yet.</p>
         )}
       </div>
     </div>
