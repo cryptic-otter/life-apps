@@ -13,6 +13,19 @@ npx tsc --noEmit # type-check without building
 
 No test suite exists yet.
 
+## Git Workflow
+
+Always type-check before committing: `npx tsc --noEmit`. If clean, commit and push in one step — do not ask the user for confirmation before pushing to main.
+
+## Supabase MCP
+
+The Supabase MCP is configured in `.mcp.json` and scoped to this project (`hjdxubmwdfravioeejpi`). Use it to run migrations directly — **do not ask the user to paste SQL into the Supabase dashboard**.
+
+Migration workflow:
+1. Write the SQL file in `supabase/migrations/` (e.g. `003_my_change.sql`)
+2. Execute it via the Supabase MCP (`execute_sql` tool)
+3. Confirm success before proceeding with front-end changes
+
 ## Architecture
 
 Personal productivity suite — diet, strength, and cardio trackers — built as a single Next.js app deployed on Vercel with Supabase as the backend.
@@ -27,6 +40,14 @@ Every tracker follows the same two-file pattern:
 Server Actions always call `supabase.auth.getUser()` themselves to get `user.id` — never trust user_id from the client.
 
 Every mutation ends with `revalidatePath('/[tracker]')` to trigger a server re-render.
+
+### Cardio tracker — swim-specific pattern
+
+The cardio page is built around a fixed weekly swim schedule. It uses an extra shared file:
+
+- **`src/app/cardio/schedule.ts`** — exports `SCHEDULE` (the weekly plan), types (`DaySchedule`, `SwimEntry`, `WeekDay`), and `getRowStatus`. **Do not modify the schedule without discussing with the user first** — it reflects their actual training programme.
+
+Requirements for the cardio redesign live in `docs/CARDIO_REQUIREMENTS.md`.
 
 ### Two Supabase clients — use the right one
 
@@ -50,7 +71,7 @@ All tables share the same conventions:
 - Row Level Security enabled on every table with policy `auth.uid() = user_id` — users only ever see their own rows
 - Because RLS handles ownership, `delete` Server Actions only need `.eq('id', id)` — no explicit user check required
 
-Migrations live in `supabase/migrations/`. To apply: paste into the Supabase SQL Editor and run. There is no CLI migration runner configured.
+Migrations live in `supabase/migrations/`. Run them via the Supabase MCP — see workflow above.
 
 ### Dashboard
 
@@ -58,7 +79,7 @@ Migrations live in `supabase/migrations/`. To apply: paste into the Supabase SQL
 
 ### Adding a new tracker
 
-1. Write a new migration in `supabase/migrations/` — follow the `user_id` + RLS convention, run it in the Supabase SQL Editor
+1. Write a new migration in `supabase/migrations/` — follow the `user_id` + RLS convention, run via Supabase MCP
 2. Create `src/app/[name]/page.tsx` — copy the structure from `diet/page.tsx`
 3. Create `src/app/[name]/[Name]Form.tsx` — copy the structure from `diet/DietForm.tsx`
 4. Add a stat card to `src/app/page.tsx` (dashboard)
@@ -71,3 +92,16 @@ Push to `main` on GitHub → Vercel auto-builds and deploys. Environment variabl
 ### Tailwind
 
 Uses Tailwind v4, which imports via `@import "tailwindcss"` in `globals.css` — not the v3 `@tailwind` directives. The theme is configured with CSS variables under `@theme inline`.
+
+### Dark mode
+
+The app supports dark mode via Tailwind `dark:` variants. The body background is driven by a CSS variable in `globals.css` that switches to `#0a0a0a` when `prefers-color-scheme: dark`. All components must include `dark:` variants for background, border, and text colours.
+
+## Skills
+
+- `/business-analyst` — structured requirements gathering followed by a formal requirements document. Use at the start of any new feature before writing code.
+- `/deploy` — type-check, commit, and push in one step.
+
+## Project docs
+
+Requirements documents live in `docs/`. Always check this directory for existing requirements before starting work on a feature.
