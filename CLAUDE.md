@@ -21,10 +21,20 @@ Always type-check before committing: `npx tsc --noEmit`. If clean, commit and pu
 
 The Supabase MCP is configured in `.mcp.json` and scoped to this project (`hjdxubmwdfravioeejpi`). Use it to run migrations directly — **do not ask the user to paste SQL into the Supabase dashboard**.
 
-Migration workflow:
+### Access token
+
+The `SUPABASE_ACCESS_TOKEN` is stored in two local-only files that are **never committed to git**:
+
+- `.env.local` — `SUPABASE_ACCESS_TOKEN=sbp_...`
+- `.mcp.json` — token is hardcoded in the `env` block (the committed version of this file uses a placeholder; the local copy has the real token, and `git update-index --assume-unchanged .mcp.json` prevents it from being staged)
+
+**The MCP tools work out of the box in this repo.** Always use them — never ask the user to run SQL manually.
+
+### Migration workflow
+
 1. Write the SQL file in `supabase/migrations/` (e.g. `003_my_change.sql`)
-2. Execute it via the Supabase MCP (`execute_sql` tool)
-3. Confirm success before proceeding with front-end changes
+2. Execute it via the Supabase MCP (`mcp__supabase__execute_sql` tool)
+3. Confirm the query returns successfully before writing any front-end code that depends on it
 
 ## Architecture
 
