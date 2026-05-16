@@ -31,6 +31,7 @@
     .b-sb      { background: #3ecf8e;   color: #024929; }
     .b-vercel  { background: #000;      color: #fff; }
     .b-rls     { background: #fef08a;   color: #713f12; }
+    .b-mcp     { background: #7c3aed;   color: #fff; }
 
     /* ── CI/CD row ───────────────────────────────────────────── */
     .cicd-row {
@@ -90,6 +91,37 @@
     .t-supabase { background: #f0fdf4; border-color: #6ee7b7; }
     .t-supabase .tier-tag  { background: #16a34a; color: #fff; }
     .t-supabase .tier-name { color: #15803d; }
+
+    /* Claude Code / MCP */
+    .t-claude { background: #faf5ff; border-color: #c4b5fd; border-style: dashed; }
+    .t-claude .tier-tag  { background: #7c3aed; color: #fff; }
+    .t-claude .tier-name { color: #6d28d9; }
+    .t-claude .card      { background: #fff; border-color: #ddd6fe; }
+    .t-claude .card h4   { color: #4c1d95; }
+    .t-claude .card li   { color: #5b21b6; }
+    .mcp-connects {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+      color: #7c3aed; margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd6fe;
+    }
+    .mcp-pkg {
+      font-family: 'Menlo', 'Monaco', monospace; font-size: 9.5px;
+      color: #7c3aed; background: #ede9fe; padding: 2px 6px; border-radius: 4px;
+      display: inline-block; margin-bottom: 8px;
+    }
+    .dev-divider {
+      text-align: center; padding: 14px 0; position: relative;
+    }
+    .dev-divider::before {
+      content: ''; position: absolute; top: 50%; left: 10%; right: 10%;
+      height: 1.5px; background: #c4b5fd;
+      border-top: 1.5px dashed #c4b5fd; background: none;
+    }
+    .dev-divider-inner {
+      display: inline-flex; align-items: center; gap: 8px;
+      position: relative; z-index: 1; background: #f1f5f9; padding: 4px 16px;
+      border: 1.5px dashed #c4b5fd; border-radius: 999px;
+    }
+    .dev-divider-inner span { font-size: 10px; font-weight: 700; color: #7c3aed; letter-spacing: 0.8px; text-transform: uppercase; }
 
     /* ── Inner grid ──────────────────────────────────────────── */
     .grid   { display: grid; gap: 12px; }
@@ -213,6 +245,7 @@
       <span class="badge b-sb">Supabase</span>
       <span class="badge b-vercel">Vercel</span>
       <span class="badge b-rls">Row-Level Security</span>
+      <span class="badge b-mcp">MCP Stack</span>
     </div>
   </header>
 
@@ -430,6 +463,63 @@
     </div>
   </div>
 
+  <!-- MCP / Dev tooling divider -->
+  <div class="dev-divider">
+    <div class="dev-divider-inner">
+      <span>⬡ &nbsp;Development Tooling — not in production request path</span>
+    </div>
+  </div>
+
+  <!-- Claude Code + MCP tier -->
+  <div class="tier t-claude">
+    <div class="tier-head">
+      <span class="tier-tag">Claude Code</span>
+      <span class="tier-name">MCP Stack &mdash; AI-assisted development layer &mdash; ~/.claude/settings.json</span>
+    </div>
+    <div class="grid cols-3">
+
+      <div class="card">
+        <span class="mcp-pkg">@supabase/mcp-server-supabase</span>
+        <h4>Supabase MCP</h4>
+        <ul>
+          <li>Run SQL migrations without opening the browser</li>
+          <li>Inspect table schemas and column types</li>
+          <li>Verify RLS policies are correctly applied</li>
+          <li>Query rows to debug data issues live</li>
+          <li>Create new tables when adding a tracker</li>
+        </ul>
+        <div class="mcp-connects">↓ &nbsp;Connects to: Supabase Platform above</div>
+      </div>
+
+      <div class="card">
+        <span class="mcp-pkg">@modelcontextprotocol/server-github</span>
+        <h4>GitHub MCP</h4>
+        <ul>
+          <li>Search repo code and file contents</li>
+          <li>Read and create issues inline</li>
+          <li>View pull requests and diffs</li>
+          <li>Check CI run status and logs</li>
+          <li>Auth via existing <code style="font-size:10px;background:#ede9fe;color:#6d28d9;padding:1px 4px;border-radius:3px;">gh</code> OAuth token</li>
+        </ul>
+        <div class="mcp-connects">↑ &nbsp;Connects to: GitHub / Vercel CI row above</div>
+      </div>
+
+      <div class="card">
+        <span class="mcp-pkg">@playwright/mcp</span>
+        <h4>Playwright MCP</h4>
+        <ul>
+          <li>Open localhost:3000 in a real browser</li>
+          <li>Navigate pages and fill forms programmatically</li>
+          <li>Take screenshots to verify UI after changes</li>
+          <li>Catch regressions before pushing to GitHub</li>
+          <li>Browser binaries downloaded on first use</li>
+        </ul>
+        <div class="mcp-connects">↑ &nbsp;Connects to: Browser / running dev server above</div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Request lifecycle -->
   <div class="section">
     <h3>Request Lifecycle — Authenticated Page Load</h3>
@@ -504,7 +594,7 @@
 
   <p class="footer">
     <a href="https://github.com/cryptic-otter/life-apps" target="_blank">github.com/cryptic-otter/life-apps</a>
-    &nbsp;&middot;&nbsp; Next.js + Supabase + Vercel
+    &nbsp;&middot;&nbsp; Next.js + Supabase + Vercel &nbsp;&middot;&nbsp; MCP: Supabase · GitHub · Playwright
   </p>
 
 </div>
