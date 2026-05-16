@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Life Apps — Architecture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 48px 24px 80px;
+    }
+
+    .page { max-width: 1020px; margin: 0 auto; }
+
+    /* ── Header ──────────────────────────────────────────────── */
+    .page-header { text-align: center; margin-bottom: 48px; }
+    .page-header h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+    .page-header .subtitle { margin-top: 6px; color: #64748b; font-size: 15px; }
+    .badges { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .badge {
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.3px;
+    }
+    .b-next    { background: #000;      color: #fff; }
+    .b-ts      { background: #3178c6;   color: #fff; }
+    .b-tw      { background: #0ea5e9;   color: #fff; }
+    .b-sb      { background: #3ecf8e;   color: #024929; }
+    .b-vercel  { background: #000;      color: #fff; }
+    .b-rls     { background: #fef08a;   color: #713f12; }
+
+    /* ── CI/CD row ───────────────────────────────────────────── */
+    .cicd-row {
+      display: flex; align-items: stretch; gap: 0;
+      background: #fff; border: 1.5px solid #e2e8f0;
+      border-radius: 12px; overflow: hidden;
+      margin-bottom: 4px;
+    }
+    .cicd-box { padding: 18px 24px; flex: 1; }
+    .cicd-box h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .cicd-box p  { font-size: 12px; color: #64748b; }
+    .cicd-divider {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 0 20px; background: #f8fafc; border-left: 1.5px solid #e2e8f0; border-right: 1.5px solid #e2e8f0;
+    }
+    .cicd-divider .arrow { font-size: 22px; color: #94a3b8; }
+    .cicd-divider small { font-size: 10px; color: #94a3b8; white-space: nowrap; margin-top: 2px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Connector ───────────────────────────────────────────── */
+    .connector {
+      text-align: center; padding: 10px 0; position: relative;
+    }
+    .connector::before {
+      content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
+      width: 2px; background: #cbd5e1; transform: translateX(-50%); z-index: 0;
+    }
+    .connector-inner {
+      display: inline-flex; flex-direction: column; align-items: center;
+      position: relative; z-index: 1; background: #f1f5f9; padding: 0 12px;
+    }
+    .connector .arr { font-size: 20px; color: #94a3b8; line-height: 1; }
+    .connector .lbl {
+      font-size: 10px; font-weight: 700; color: #94a3b8;
+      letter-spacing: 0.8px; text-transform: uppercase; margin-top: 2px;
+    }
+
+    /* ── Tier ────────────────────────────────────────────────── */
+    .tier { border-radius: 14px; padding: 22px; border: 2px solid; margin-bottom: 4px; }
+    .tier-head { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .tier-tag {
+      font-size: 9px; font-weight: 800; letter-spacing: 1.5px;
+      text-transform: uppercase; padding: 3px 9px; border-radius: 5px;
+    }
+    .tier-name { font-size: 14px; font-weight: 600; }
+
+    /* Browser */
+    .t-browser { background: #eff6ff; border-color: #93c5fd; }
+    .t-browser .tier-tag  { background: #1d4ed8; color: #fff; }
+    .t-browser .tier-name { color: #1e40af; }
+
+    /* Vercel */
+    .t-vercel { background: #18181b; border-color: #3f3f46; color: #e4e4e7; }
+    .t-vercel .tier-tag  { background: #3f3f46; color: #a1a1aa; }
+    .t-vercel .tier-name { color: #f4f4f5; }
+
+    /* Supabase */
+    .t-supabase { background: #f0fdf4; border-color: #6ee7b7; }
+    .t-supabase .tier-tag  { background: #16a34a; color: #fff; }
+    .t-supabase .tier-name { color: #15803d; }
+
+    /* ── Inner grid ──────────────────────────────────────────── */
+    .grid   { display: grid; gap: 12px; }
+    .cols-5 { grid-template-columns: repeat(5, 1fr); }
+    .cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .cols-2 { grid-template-columns: 1fr 2fr; }
+    .cols-1 { grid-template-columns: 1fr; }
+    .span-3 { grid-column: span 3; }
+    .span-2 { grid-column: span 2; }
+
+    /* ── Card ────────────────────────────────────────────────── */
+    .card {
+      background: #fff; border: 1.5px solid #e2e8f0; border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .t-vercel .card { background: #27272a; border-color: #3f3f46; }
+
+    .card h4 { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+    .t-vercel .card h4 { color: #f4f4f5; }
+    .card .tag {
+      display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+      text-transform: uppercase; padding: 1px 6px; border-radius: 4px; margin-bottom: 8px;
+    }
+    .tag-server  { background: #dbeafe; color: #1e40af; }
+    .tag-client  { background: #fce7f3; color: #9d174d; }
+    .tag-edge    { background: #fef9c3; color: #78350f; }
+    .tag-api     { background: #dcfce7; color: #166534; }
+
+    .card ul { padding-left: 14px; }
+    .card li { font-size: 11px; color: #64748b; margin-bottom: 3px; line-height: 1.4; }
+    .t-vercel .card li { color: #a1a1aa; }
+
+    /* page card in browser tier */
+    .page-card { text-align: center; }
+    .page-card h4 { color: #1e40af; }
+    .page-card .desc { font-size: 11px; color: #64748b; margin-bottom: 6px; }
+    .page-card .path {
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 9.5px; color: #93c5fd; background: #eff6ff;
+      padding: 2px 6px; border-radius: 4px; display: inline-block;
+    }
+
+    /* DB schema card */
+    .db-card { background: #dcfce7; border: 1.5px solid #86efac; border-radius: 10px; padding: 16px; }
+    .db-table { margin-bottom: 14px; }
+    .db-table:last-child { margin-bottom: 0; }
+    .db-table h4 {
+      font-family: 'Menlo', 'Monaco', monospace; font-size: 12px;
+      font-weight: 700; color: #166534; margin-bottom: 5px; padding-bottom: 4px;
+      border-bottom: 1px solid #86efac;
+    }
+    .db-row { font-size: 11px; color: #166534; font-family: monospace; padding: 1px 0; }
+    .db-type { color: #4ade80; margin-left: 6px; }
+    .rls-note {
+      margin-top: 12px; padding: 8px 12px; background: #fefce8; border: 1px solid #fde047;
+      border-radius: 7px; font-size: 11px; color: #713f12; font-weight: 600;
+    }
+
+    /* ── Env vars ────────────────────────────────────────────── */
+    .env-row { display: flex; gap: 12px; margin-top: 12px; }
+    .env-var {
+      flex: 1; background: #18181b; border: 1.5px solid #3f3f46;
+      border-radius: 8px; padding: 10px 14px;
+    }
+    .env-var code { font-family: monospace; font-size: 11px; color: #a3e635; display: block; }
+    .env-var p { font-size: 10px; color: #71717a; margin-top: 3px; }
+
+    /* ── Flow section ────────────────────────────────────────── */
+    .section {
+      background: #fff; border: 1.5px solid #e2e8f0; border-radius: 12px;
+      padding: 22px; margin-top: 20px;
+    }
+    .section h3 { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: #0f172a; }
+
+    .flow-step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+    .flow-num {
+      width: 22px; height: 22px; border-radius: 50%; background: #0f172a; color: #fff;
+      font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .flow-text { font-size: 12px; color: #374151; line-height: 1.6; }
+    .flow-text code {
+      font-family: monospace; background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-size: 11px;
+    }
+
+    /* ── Key files ───────────────────────────────────────────── */
+    .files-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+    .file-item { border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; }
+    .file-item code {
+      font-family: monospace; font-size: 11px; font-weight: 700; color: #0f172a; display: block; margin-bottom: 4px;
+    }
+    .file-item p { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #94a3b8; }
+    .footer a { color: #64748b; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 700px) {
+      .cols-5 { grid-template-columns: repeat(2, 1fr); }
+      .cols-3 { grid-template-columns: 1fr; }
+      .cols-2 { grid-template-columns: 1fr; }
+      .span-3, .span-2 { grid-column: span 1; }
+      .cicd-row { flex-direction: column; }
+      .cicd-divider { border-left: none; border-right: none; border-top: 1.5px solid #e2e8f0; border-bottom: 1.5px solid #e2e8f0; padding: 12px; }
+      .cicd-divider .arrow { transform: rotate(90deg); }
+      .env-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <header class="page-header">
+    <h1>Life Apps — System Architecture</h1>
+    <p class="subtitle">Personal productivity suite &middot; Diet &middot; Strength &middot; Cardio</p>
+    <div class="badges">
+      <span class="badge b-next">Next.js 16</span>
+      <span class="badge b-ts">TypeScript</span>
+      <span class="badge b-tw">Tailwind CSS 4</span>
+      <span class="badge b-sb">Supabase</span>
+      <span class="badge b-vercel">Vercel</span>
+      <span class="badge b-rls">Row-Level Security</span>
+    </div>
+  </header>
+
+  <!-- CI/CD -->
+  <div class="cicd-row">
+    <div class="cicd-box">
+      <h3>⬡ &nbsp;GitHub &mdash; cryptic-otter/life-apps</h3>
+      <p>Source of truth &middot; main branch &middot; feature branches get preview deploys</p>
+    </div>
+    <div class="cicd-divider">
+      <span class="arrow">→</span>
+      <small>git push triggers build</small>
+    </div>
+    <div class="cicd-box">
+      <h3>▲ &nbsp;Vercel &mdash; Auto CI/CD</h3>
+      <p>Builds on every push to main &middot; Preview URL per pull request &middot; Zero-config deployment</p>
+    </div>
+  </div>
+
+  <!-- Browser tier -->
+  <div class="connector">
+    <div class="connector-inner">
+      <span class="arr">↓</span>
+      <span class="lbl">HTTPS &middot; Cookie sessions</span>
+    </div>
+  </div>
+
+  <div class="tier t-browser">
+    <div class="tier-head">
+      <span class="tier-tag">Browser</span>
+      <span class="tier-name">Client &mdash; User&rsquo;s Device</span>
+    </div>
+    <div class="grid cols-5">
+      <div class="card page-card">
+        <h4>Dashboard</h4>
+        <p class="desc">Today&rsquo;s stats across all trackers</p>
+        <span class="path">app/page.tsx</span>
+      </div>
+      <div class="card page-card">
+        <h4>Diet</h4>
+        <p class="desc">Log food &middot; calories &middot; macros</p>
+        <span class="path">app/diet/page.tsx</span>
+      </div>
+      <div class="card page-card">
+        <h4>Strength</h4>
+        <p class="desc">Log exercises &middot; sets &middot; weight</p>
+        <span class="path">app/strength/page.tsx</span>
+      </div>
+      <div class="card page-card">
+        <h4>Cardio</h4>
+        <p class="desc">Log sessions &middot; duration &middot; distance</p>
+        <span class="path">app/cardio/page.tsx</span>
+      </div>
+      <div class="card page-card">
+        <h4>Login</h4>
+        <p class="desc">Email &amp; password auth</p>
+        <span class="path">app/auth/login/page.tsx</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vercel tier -->
+  <div class="connector">
+    <div class="connector-inner">
+      <span class="arr">↓</span>
+      <span class="lbl">HTTP request hits Vercel edge</span>
+    </div>
+  </div>
+
+  <div class="tier t-vercel">
+    <div class="tier-head">
+      <span class="tier-tag">Vercel Platform</span>
+      <span class="tier-name">Next.js App Router &mdash; Edge + Serverless Functions</span>
+    </div>
+    <div class="grid cols-3">
+
+      <!-- Middleware -->
+      <div class="card">
+        <span class="tag tag-edge">Edge Middleware</span>
+        <h4>Auth Guard</h4>
+        <ul>
+          <li>Runs before every request</li>
+          <li>Reads Supabase session cookie</li>
+          <li>No session → redirect <code style="font-size:10px;background:#3f3f46;padding:1px 4px;border-radius:3px;">/auth/login</code></li>
+          <li>Refreshes expired session tokens</li>
+          <li>Passes user context downstream</li>
+        </ul>
+        <p style="font-family:monospace;font-size:10px;color:#71717a;margin-top:10px;">src/middleware.ts</p>
+      </div>
+
+      <!-- Server components + actions -->
+      <div class="card">
+        <span class="tag tag-server">Server Components + Actions</span>
+        <h4>Data Layer</h4>
+        <ul>
+          <li>Pages fetch data at request time (no client fetch)</li>
+          <li><code style="font-size:10px;background:#3f3f46;padding:1px 4px;border-radius:3px;">addEntry()</code> — diet insert + revalidate</li>
+          <li><code style="font-size:10px;background:#3f3f46;padding:1px 4px;border-radius:3px;">addEntry()</code> — strength insert + revalidate</li>
+          <li><code style="font-size:10px;background:#3f3f46;padding:1px 4px;border-radius:3px;">addSession()</code> — cardio insert + revalidate</li>
+          <li><code style="font-size:10px;background:#3f3f46;padding:1px 4px;border-radius:3px;">delete*(id)</code> — remove any row</li>
+          <li>Nav checks session server-side</li>
+          <li>Auth callback exchanges code → session</li>
+        </ul>
+        <p style="font-family:monospace;font-size:10px;color:#71717a;margin-top:10px;">src/app/*/page.tsx &middot; src/components/Nav.tsx</p>
+      </div>
+
+      <!-- Client components -->
+      <div class="card">
+        <span class="tag tag-client">Client Components</span>
+        <h4>Interactive UI</h4>
+        <ul>
+          <li><strong style="color:#e4e4e7;">DietForm</strong> — controlled form, calls addEntry() action</li>
+          <li><strong style="color:#e4e4e7;">StrengthForm</strong> — sets/reps/weight inputs</li>
+          <li><strong style="color:#e4e4e7;">CardioForm</strong> — activity/duration/distance</li>
+          <li><strong style="color:#e4e4e7;">LoginPage</strong> — Supabase browser auth</li>
+          <li>Forms reset on success &amp; close drawer</li>
+        </ul>
+        <p style="font-family:monospace;font-size:10px;color:#71717a;margin-top:10px;">src/app/*/[Form].tsx</p>
+      </div>
+    </div>
+
+    <!-- Supabase client helpers row -->
+    <div class="grid cols-2" style="margin-top:12px;">
+      <div class="card">
+        <span class="tag tag-server">Server SDK</span>
+        <h4>createClient() &mdash; server.ts</h4>
+        <ul>
+          <li>Cookie-based session (SSR-safe)</li>
+          <li>Used in Server Components &amp; Actions</li>
+          <li>Reads/writes auth cookies via Next.js <code style="font-size:10px;background:#3f3f46;padding:1px 4px;border-radius:3px;">cookies()</code></li>
+        </ul>
+        <p style="font-family:monospace;font-size:10px;color:#71717a;margin-top:10px;">src/lib/supabase/server.ts</p>
+      </div>
+      <div class="card">
+        <span class="tag tag-client">Browser SDK</span>
+        <h4>createClient() &mdash; client.ts</h4>
+        <ul>
+          <li>Used only in &lsquo;use client&rsquo; components</li>
+          <li>Manages auth state in the browser (login/logout)</li>
+          <li>Initialized with NEXT_PUBLIC_* env vars</li>
+        </ul>
+        <p style="font-family:monospace;font-size:10px;color:#71717a;margin-top:10px;">src/lib/supabase/client.ts</p>
+      </div>
+    </div>
+
+    <!-- Env vars -->
+    <div class="env-row">
+      <div class="env-var">
+        <code>NEXT_PUBLIC_SUPABASE_URL</code>
+        <p>Your Supabase project URL &mdash; set in Vercel dashboard + local .env.local</p>
+      </div>
+      <div class="env-var">
+        <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>
+        <p>Supabase anon/public key &mdash; safe to expose; RLS enforces access control</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase tier -->
+  <div class="connector">
+    <div class="connector-inner">
+      <span class="arr">↓</span>
+      <span class="lbl">Supabase JS SDK &middot; REST API &middot; JWT auth header</span>
+    </div>
+  </div>
+
+  <div class="tier t-supabase">
+    <div class="tier-head">
+      <span class="tier-tag">Supabase</span>
+      <span class="tier-name">Backend-as-a-Service &mdash; Hosted PostgreSQL + Auth</span>
+    </div>
+    <div class="grid cols-2">
+
+      <!-- Auth -->
+      <div class="card">
+        <h4>Auth</h4>
+        <ul>
+          <li>Email + password provider (built-in)</li>
+          <li>Sessions stored in HTTP-only cookies (SSR-safe via @supabase/ssr)</li>
+          <li>JWT issued per user, contains <code style="font-size:10px;background:#f1f5f9;color:#0f172a;padding:1px 4px;border-radius:3px;">auth.uid()</code></li>
+          <li>Email confirmation via <code style="font-size:10px;background:#f1f5f9;color:#0f172a;padding:1px 4px;border-radius:3px;">/api/auth/callback</code></li>
+          <li>Redirect URLs configured in Supabase dashboard</li>
+          <li>Sign-out clears cookie + redirects to login</li>
+        </ul>
+      </div>
+
+      <!-- Database -->
+      <div class="db-card">
+        <div class="db-table">
+          <h4>diet_entries</h4>
+          <div class="db-row">id <span class="db-type">uuid PK</span> &nbsp; user_id <span class="db-type">uuid → auth.users</span> &nbsp; date <span class="db-type">date</span></div>
+          <div class="db-row">meal <span class="db-type">text</span> &nbsp; food <span class="db-type">text</span></div>
+          <div class="db-row">calories <span class="db-type">integer</span> &nbsp; protein_g <span class="db-type">numeric</span> &nbsp; carbs_g <span class="db-type">numeric</span> &nbsp; fat_g <span class="db-type">numeric</span></div>
+        </div>
+
+        <div class="db-table">
+          <h4>strength_sets</h4>
+          <div class="db-row">id <span class="db-type">uuid PK</span> &nbsp; user_id <span class="db-type">uuid → auth.users</span> &nbsp; date <span class="db-type">date</span></div>
+          <div class="db-row">exercise <span class="db-type">text</span> &nbsp; sets <span class="db-type">integer</span> &nbsp; reps <span class="db-type">integer</span> &nbsp; weight_kg <span class="db-type">numeric</span></div>
+          <div class="db-row">notes <span class="db-type">text?</span></div>
+        </div>
+
+        <div class="db-table">
+          <h4>cardio_sessions</h4>
+          <div class="db-row">id <span class="db-type">uuid PK</span> &nbsp; user_id <span class="db-type">uuid → auth.users</span> &nbsp; date <span class="db-type">date</span></div>
+          <div class="db-row">activity <span class="db-type">text</span> &nbsp; duration_minutes <span class="db-type">integer</span></div>
+          <div class="db-row">distance_km <span class="db-type">numeric?</span> &nbsp; notes <span class="db-type">text?</span></div>
+        </div>
+
+        <div class="rls-note">
+          🔒 &nbsp;Row Level Security enabled on all tables<br>
+          Policy: <code style="font-family:monospace;font-size:11px;">auth.uid() = user_id</code> &mdash; users can only read/write their own rows
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Request lifecycle -->
+  <div class="section">
+    <h3>Request Lifecycle — Authenticated Page Load</h3>
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <div class="flow-text">User navigates to <code>/diet</code>. Browser sends request with session cookie to Vercel edge.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <div class="flow-text"><code>src/middleware.ts</code> reads the cookie and calls Supabase to verify the session. No valid session → 302 redirect to <code>/auth/login</code>. Valid session → request continues.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">3</div>
+      <div class="flow-text"><code>app/diet/page.tsx</code> (Server Component) runs on a Vercel serverless function. It calls <code>createClient()</code> (server), which attaches the user&rsquo;s JWT to the Supabase query.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">4</div>
+      <div class="flow-text">Supabase evaluates the RLS policy: <code>auth.uid() = user_id</code>. Returns only this user&rsquo;s <code>diet_entries</code> rows for today.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">5</div>
+      <div class="flow-text">Next.js renders HTML server-side (including the <code>DietForm</code> client component shell) and streams it to the browser. No loading spinner &mdash; data is in the initial HTML.</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">6</div>
+      <div class="flow-text">User submits &ldquo;+ Log food&rdquo; form → browser calls the <code>addEntry()</code> Server Action (an RPC to Vercel). Action inserts row into Supabase, calls <code>revalidatePath('/diet')</code>, page re-renders with fresh data.</div>
+    </div>
+  </div>
+
+  <!-- Key files -->
+  <div class="section">
+    <h3>Key File Reference</h3>
+    <div class="files-grid">
+      <div class="file-item">
+        <code>src/middleware.ts</code>
+        <p>Edge function. Checks session on every request. Protects all routes except <code>/auth/*</code>.</p>
+      </div>
+      <div class="file-item">
+        <code>src/lib/supabase/server.ts</code>
+        <p>Server-side Supabase client. Reads/writes auth cookies via Next.js <code>cookies()</code>. Used in all Server Components and Server Actions.</p>
+      </div>
+      <div class="file-item">
+        <code>src/lib/supabase/client.ts</code>
+        <p>Browser Supabase client. Used only in <code>'use client'</code> components (login flow, auth state).</p>
+      </div>
+      <div class="file-item">
+        <code>src/app/api/auth/callback/route.ts</code>
+        <p>Exchanges the Supabase auth code for a session cookie after the email confirmation link is clicked.</p>
+      </div>
+      <div class="file-item">
+        <code>src/components/Nav.tsx</code>
+        <p>Server Component. Reads session to show/hide nav. Sign-out uses a Server Action — no client JS needed.</p>
+      </div>
+      <div class="file-item">
+        <code>supabase/migrations/001_initial.sql</code>
+        <p>Full DB schema. Paste into Supabase SQL Editor to create the three tables + RLS policies.</p>
+      </div>
+      <div class="file-item">
+        <code>src/app/*/page.tsx</code>
+        <p>Each tracker page is a Server Component with inline Server Actions for mutations. Data fetched at request time.</p>
+      </div>
+      <div class="file-item">
+        <code>src/app/*/[Name]Form.tsx</code>
+        <p>Client Components for the add-entry forms. Marked <code>'use client'</code> for controlled inputs and local open/close state.</p>
+      </div>
+      <div class="file-item">
+        <code>.env.local.example</code>
+        <p>Template for required environment variables. Copy to <code>.env.local</code> locally and add to Vercel dashboard for production.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer">
+    <a href="https://github.com/cryptic-otter/life-apps" target="_blank">github.com/cryptic-otter/life-apps</a>
+    &nbsp;&middot;&nbsp; Next.js + Supabase + Vercel
+  </p>
+
+</div>
+</body>
+</html>
