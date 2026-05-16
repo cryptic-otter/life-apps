@@ -126,6 +126,7 @@
     /* ── Inner grid ──────────────────────────────────────────── */
     .grid   { display: grid; gap: 12px; }
     .cols-5 { grid-template-columns: repeat(5, 1fr); }
+    .cols-4 { grid-template-columns: repeat(4, 1fr); }
     .cols-3 { grid-template-columns: repeat(3, 1fr); }
     .cols-2 { grid-template-columns: 1fr 2fr; }
     .cols-1 { grid-template-columns: 1fr; }
@@ -221,6 +222,7 @@
 
     @media (max-width: 700px) {
       .cols-5 { grid-template-columns: repeat(2, 1fr); }
+      .cols-4 { grid-template-columns: repeat(2, 1fr); }
       .cols-3 { grid-template-columns: 1fr; }
       .cols-2 { grid-template-columns: 1fr; }
       .span-3, .span-2 { grid-column: span 1; }
@@ -476,7 +478,7 @@
       <span class="tier-tag">Claude Code</span>
       <span class="tier-name">MCP Stack &mdash; AI-assisted development layer &mdash; ~/.claude/settings.json</span>
     </div>
-    <div class="grid cols-3">
+    <div class="grid cols-4">
 
       <div class="card">
         <span class="mcp-pkg">@supabase/mcp-server-supabase</span>
@@ -515,6 +517,20 @@
           <li>Browser binaries downloaded on first use</li>
         </ul>
         <div class="mcp-connects">↑ &nbsp;Connects to: Browser / running dev server above</div>
+      </div>
+
+      <div class="card">
+        <span class="mcp-pkg">mcp.vercel.com (HTTP · Beta)</span>
+        <h4>Vercel MCP</h4>
+        <ul>
+          <li>Check deployment status per branch</li>
+          <li>Read build logs for failed deploys</li>
+          <li>View project &amp; domain metadata</li>
+          <li>Search Vercel docs inline</li>
+          <li>Read-only in current Beta</li>
+          <li>OAuth auth on first use after restart</li>
+        </ul>
+        <div class="mcp-connects">↑ &nbsp;Connects to: Vercel CI/CD row above</div>
       </div>
 
     </div>
@@ -594,7 +610,7 @@
 
   <p class="footer">
     <a href="https://github.com/cryptic-otter/life-apps" target="_blank">github.com/cryptic-otter/life-apps</a>
-    &nbsp;&middot;&nbsp; Next.js + Supabase + Vercel &nbsp;&middot;&nbsp; MCP: Supabase · GitHub · Playwright
+    &nbsp;&middot;&nbsp; Next.js + Supabase + Vercel &nbsp;&middot;&nbsp; MCP: Supabase &middot; GitHub &middot; Playwright &middot; Vercel
   </p>
 
 </div>
