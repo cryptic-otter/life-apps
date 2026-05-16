@@ -24,6 +24,7 @@ export default function DietForm({ foodItems, mealTemplates, addFoodEntry, addMe
   // Meal-template mode
   const [templateId, setTemplateId] = useState('')
   const [itemServings, setItemServings] = useState<Record<string, string>>({})
+  const [templateServings, setTemplateServings] = useState('1')
 
   const filteredFoods = useMemo(
     () =>
@@ -43,6 +44,7 @@ export default function DietForm({ foodItems, mealTemplates, addFoodEntry, addMe
 
   function selectTemplate(id: string) {
     setTemplateId(id)
+    setTemplateServings('1')
     const t = mealTemplates.find(m => m.id === id)
     if (t?.items) {
       const defaults: Record<string, string> = {}
@@ -61,6 +63,7 @@ export default function DietForm({ foodItems, mealTemplates, addFoodEntry, addMe
     setShowDropdown(false)
     setTemplateId('')
     setItemServings({})
+    setTemplateServings('1')
   }
 
   async function handleFoodSubmit(e: React.FormEvent) {
@@ -77,10 +80,11 @@ export default function DietForm({ foodItems, mealTemplates, addFoodEntry, addMe
   async function handleMealSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedTemplate?.items?.length) return
+    const multiplier = Number(templateServings) || 1
     const items = selectedTemplate.items
       .sort((a, b) => a.sort_order - b.sort_order)
       .map(item => {
-        const s = Number(itemServings[item.id] ?? item.servings)
+        const s = (Number(itemServings[item.id] ?? item.servings)) * multiplier
         if (item.food_item_id) {
           return { food_item_id: item.food_item_id, food_name: item.food_item?.name ?? '', servings: s }
         }
@@ -270,46 +274,70 @@ export default function DietForm({ foodItems, mealTemplates, addFoodEntry, addMe
                 )}
               </div>
 
-              {selectedTemplate?.items && selectedTemplate.items.length > 0 && (
-                <div className="space-y-2">
-                  {[...selectedTemplate.items]
-                    .sort((a, b) => a.sort_order - b.sort_order)
-                    .map(item => {
-                      const displayName = item.food_item?.name ?? item.name ?? ''
-                      const sizeLabel = item.food_item
-                        ? `${item.food_item.serving_qty} ${item.food_item.serving_unit}`
-                        : `${item.serving_qty ?? ''} ${item.serving_unit ?? ''}`.trim()
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2"
-                        >
-                          <span className="flex-1 text-sm text-gray-900 dark:text-gray-100 truncate">
-                            {displayName}
-                            {sizeLabel && (
-                              <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
-                                / {sizeLabel}
-                              </span>
-                            )}
-                          </span>
-                          <input
-                            type="number"
-                            min="0.01"
-                            step="0.01"
-                            value={itemServings[item.id] ?? String(item.servings)}
-                            onChange={e =>
-                              setItemServings(prev => ({ ...prev, [item.id]: e.target.value }))
-                            }
-                            className="w-20 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          />
-                          <span className="text-xs text-gray-400 dark:text-gray-500 w-14 text-right">
-                            servings
-                          </span>
-                        </div>
-                      )
-                    })}
+              {selectedTemplate && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Servings of this meal
+                    <span className="font-normal text-gray-400 dark:text-gray-500 ml-1">
+                      — scales all items proportionally
+                    </span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={templateServings}
+                    onChange={e => setTemplateServings(e.target.value)}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
               )}
+
+              {selectedTemplate?.items && selectedTemplate.items.length > 0 && (() => {
+                const multiplier = Number(templateServings) || 1
+                return (
+                  <div className="space-y-2">
+                    {[...selectedTemplate.items]
+                      .sort((a, b) => a.sort_order - b.sort_order)
+                      .map(item => {
+                        const displayName = item.food_item?.name ?? item.name ?? ''
+                        const sizeLabel = item.food_item
+                          ? `${item.food_item.serving_qty} ${item.food_item.serving_unit}`
+                          : `${item.serving_qty ?? ''} ${item.serving_unit ?? ''}`.trim()
+                        const baseServings = Number(itemServings[item.id] ?? item.servings)
+                        const effective = Math.round(baseServings * multiplier * 1000) / 1000
+                        return (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2"
+                          >
+                            <span className="flex-1 text-sm text-gray-900 dark:text-gray-100 truncate">
+                              {displayName}
+                              {sizeLabel && (
+                                <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
+                                  / {sizeLabel}
+                                </span>
+                              )}
+                            </span>
+                            <input
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              value={itemServings[item.id] ?? String(item.servings)}
+                              onChange={e =>
+                                setItemServings(prev => ({ ...prev, [item.id]: e.target.value }))
+                              }
+                              className="w-20 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm bg-white dark:bg-gray-600 text-gray-900 dark:text-gray-100 text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <span className="text-xs text-gray-400 dark:text-gray-500 w-20 text-right">
+                              {multiplier !== 1 ? `→ ${effective} logged` : 'servings'}
+                            </span>
+                          </div>
+                        )
+                      })}
+                  </div>
+                )
+              })()}
 
               <div>
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
