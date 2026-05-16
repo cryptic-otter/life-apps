@@ -40,6 +40,35 @@ function toFormPayload(items: DraftItem[]) {
   }))
 }
 
+function itemMacros(item: MealTemplateItem) {
+  const fi = item.food_item
+  const s = item.servings
+  const cal   = Math.round(((fi ? fi.calories   : item.calories)   ?? 0) * s)
+  const prot  = Math.round(((fi ? fi.protein_g  : item.protein_g)  ?? 0) * s)
+  const carbs = Math.round(((fi ? fi.carbs_g    : item.carbs_g)    ?? 0) * s)
+  const fat   = Math.round(((fi ? fi.fat_g      : item.fat_g)      ?? 0) * s)
+  const hasData = fi
+    ? (fi.calories != null || fi.protein_g != null || fi.carbs_g != null || fi.fat_g != null)
+    : (item.calories != null || item.protein_g != null || item.carbs_g != null || item.fat_g != null)
+  return { cal, prot, carbs, fat, hasData }
+}
+
+function templateTotals(items: MealTemplateItem[]) {
+  return items.reduce(
+    (acc, item) => {
+      const m = itemMacros(item)
+      return {
+        cal:   acc.cal   + m.cal,
+        prot:  acc.prot  + m.prot,
+        carbs: acc.carbs + m.carbs,
+        fat:   acc.fat   + m.fat,
+        hasData: acc.hasData || m.hasData,
+      }
+    },
+    { cal: 0, prot: 0, carbs: 0, fat: 0, hasData: false }
+  )
+}
+
 function templateToItems(t: MealTemplate): DraftItem[] {
   return (t.items ?? [])
     .sort((a, b) => a.sort_order - b.sort_order)
@@ -527,36 +556,51 @@ export default function MealsForm({
 
               {(template.items ?? []).length === 0 ? (
                 <p className="text-xs text-gray-400 dark:text-gray-500">No items</p>
-              ) : (
-                <ul className="space-y-1">
-                  {[...(template.items ?? [])]
-                    .sort((a, b) => a.sort_order - b.sort_order)
-                    .map(item => {
-                      const displayName = item.food_item?.name ?? item.name ?? ''
-                      const sizeLabel = item.food_item
-                        ? `${item.food_item.serving_qty} ${item.food_item.serving_unit}`
-                        : `${item.serving_qty ?? ''} ${item.serving_unit ?? ''}`.trim()
-                      return (
-                        <li
-                          key={item.id}
-                          className="flex items-center justify-between text-sm text-gray-700 dark:text-gray-300"
-                        >
-                          <span>
-                            {displayName}
-                            {sizeLabel && (
-                              <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
-                                / {sizeLabel}
+              ) : (() => {
+                const sorted = [...(template.items ?? [])].sort((a, b) => a.sort_order - b.sort_order)
+                const totals = templateTotals(sorted)
+                return (
+                  <>
+                    <ul className="space-y-1.5">
+                      {sorted.map(item => {
+                        const displayName = item.food_item?.name ?? item.name ?? ''
+                        const sizeLabel = item.food_item
+                          ? `${item.food_item.serving_qty} ${item.food_item.serving_unit}`
+                          : `${item.serving_qty ?? ''} ${item.serving_unit ?? ''}`.trim()
+                        const m = itemMacros(item)
+                        return (
+                          <li key={item.id} className="text-sm text-gray-700 dark:text-gray-300">
+                            <div className="flex items-baseline justify-between">
+                              <span>
+                                {displayName}
+                                {sizeLabel && (
+                                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
+                                    / {sizeLabel}
+                                  </span>
+                                )}
                               </span>
+                              <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 shrink-0">
+                                {item.servings} serving{item.servings !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            {m.hasData && (
+                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                {m.cal} kcal · P {m.prot}g · C {m.carbs}g · F {m.fat}g
+                              </div>
                             )}
-                          </span>
-                          <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 shrink-0">
-                            {item.servings} serving{item.servings !== 1 ? 's' : ''}
-                          </span>
-                        </li>
-                      )
-                    })}
-                </ul>
-              )}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    {totals.hasData && (
+                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <span>Total</span>
+                        <span>{totals.cal} kcal · P {totals.prot}g · C {totals.carbs}g · F {totals.fat}g</span>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           )
         )}
