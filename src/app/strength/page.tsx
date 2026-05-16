@@ -45,26 +45,26 @@ export default async function StrengthPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Strength</h1>
-        <p className="text-sm text-gray-500">{entries?.length ?? 0} exercises today</p>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Strength</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{entries?.length ?? 0} exercises today</p>
       </div>
 
       <StrengthForm addEntry={addEntry} />
 
       <div className="mt-6 space-y-4">
         {Object.entries(byExercise).map(([exercise, sets]) => (
-          <div key={exercise} className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="font-medium text-gray-900 mb-3">{exercise}</h3>
+          <div key={exercise} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-3">{exercise}</h3>
             <div className="space-y-2">
               {sets!.map(entry => (
                 <div key={entry.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700">
+                  <span className="text-gray-700 dark:text-gray-300">
                     {entry.sets} &times; {entry.reps} reps
                     {entry.weight_kg ? ` @ ${entry.weight_kg} kg` : ''}
                   </span>
-                  {entry.notes && <span className="text-gray-400 text-xs mx-2">{entry.notes}</span>}
+                  {entry.notes && <span className="text-gray-400 dark:text-gray-500 text-xs mx-2">{entry.notes}</span>}
                   <form action={deleteEntry.bind(null, entry.id)}>
-                    <button type="submit" className="text-gray-300 hover:text-red-500 text-lg leading-none px-1">
+                    <button type="submit" className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 text-lg leading-none px-1">
                       &times;
                     </button>
                   </form>
@@ -74,7 +74,7 @@ export default async function StrengthPage() {
           </div>
         ))}
         {Object.keys(byExercise).length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-12">No exercises logged today.</p>
+          <p className="text-sm text-gray-400 dark:text-gray-600 text-center py-12">No exercises logged today.</p>
         )}
       </div>
     </div>
