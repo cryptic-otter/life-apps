@@ -1,42 +1,92 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import CardioForm from './CardioForm'
+import { SCHEDULE, DAY_NAMES, type SwimEntry, type WeekDay } from './schedule'
 
 export default async function CardioPage() {
   const supabase = await createClient()
-  const today = new Date().toISOString().split('T')[0]
 
-  const { data: sessions } = await supabase
+  const now = new Date()
+  const todayStr = now.toISOString().split('T')[0]
+  const todayDow = now.getDay()
+
+  const weekStart = new Date(now)
+  weekStart.setDate(now.getDate() - todayDow)
+  const weekStartStr = weekStart.toISOString().split('T')[0]
+
+  const thirtyDaysAgo = new Date(now)
+  thirtyDaysAgo.setDate(now.getDate() - 30)
+  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]
+
+  const { data: rows } = await supabase
     .from('cardio_sessions')
-    .select('*')
+    .select('id, date, distance_miles, planned_miles, sleep_quality, fuel_level, notes, is_off_plan')
+    .gte('date', thirtyDaysAgoStr)
     .order('date', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(30)
 
-  const todayMinutes = (sessions ?? [])
-    .filter(s => s.date === today)
-    .reduce((sum, s) => sum + s.duration_minutes, 0)
+  const sessions: SwimEntry[] = (rows ?? []).map((r: Record<string, unknown>) => ({
+    id: r.id as string,
+    date: r.date as string,
+    distance_miles: (r.distance_miles as number) ?? null,
+    planned_miles: (r.planned_miles as number) ?? null,
+    sleep_quality: (r.sleep_quality as string) ?? null,
+    fuel_level: (r.fuel_level as string) ?? null,
+    notes: (r.notes as string) ?? null,
+    is_off_plan: (r.is_off_plan as boolean) ?? false,
+  }))
 
-  async function addSession(formData: FormData) {
+  const weekDays: WeekDay[] = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart)
+    d.setDate(weekStart.getDate() + i)
+    const dateStr = d.toISOString().split('T')[0]
+    return {
+      dateStr,
+      dayName: DAY_NAMES[i],
+      schedule: SCHEDULE[i],
+      entry: sessions.find(s => s.date === dateStr) ?? null,
+    }
+  })
+
+  const todayEntry = sessions.find(s => s.date === todayStr) ?? null
+  const pastSwims = sessions.filter(s => s.date < weekStartStr)
+  const weekMiles = weekDays.reduce((sum, d) => sum + (d.entry?.distance_miles ?? 0), 0)
+  const tomorrowDow = (todayDow + 1) % 7
+
+  async function addSwim(formData: FormData) {
     'use server'
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+    const miles = Number(formData.get('distance_miles'))
     await supabase.from('cardio_sessions').insert({
       user_id: user.id,
-      date: (formData.get('date') as string) || today,
-      activity: formData.get('activity'),
-      duration_minutes: Number(formData.get('duration')),
-      distance_km: Number(formData.get('distance')) || null,
+      date: formData.get('date') as string,
+      activity: 'Swimming',
+      distance_miles: miles,
+      planned_miles: Number(formData.get('planned_miles')) || null,
+      calories: Math.round(miles * 600),
+      sleep_quality: formData.get('sleep_quality') as string,
+      fuel_level: formData.get('fuel_level') as string,
       notes: (formData.get('notes') as string) || null,
+      is_off_plan: formData.get('is_off_plan') === 'true',
     })
     revalidatePath('/cardio')
   }
 
-  async function deleteSession(id: string) {
+  async function updateSwim(id: string, formData: FormData) {
     'use server'
     const supabase = await createClient()
-    await supabase.from('cardio_sessions').delete().eq('id', id)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const miles = Number(formData.get('distance_miles'))
+    await supabase.from('cardio_sessions').update({
+      distance_miles: miles,
+      planned_miles: Number(formData.get('planned_miles')) || null,
+      calories: Math.round(miles * 600),
+      sleep_quality: formData.get('sleep_quality') as string,
+      fuel_level: formData.get('fuel_level') as string,
+      notes: (formData.get('notes') as string) || null,
+    }).eq('id', id)
     revalidatePath('/cardio')
   }
 
@@ -44,36 +94,18 @@ export default async function CardioPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Cardio</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{todayMinutes} min today</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{weekMiles.toFixed(1)} mi this week</p>
       </div>
-
-      <CardioForm addSession={addSession} />
-
-      <div className="mt-6 space-y-2">
-        {sessions?.map(session => (
-          <div key={session.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between">
-            <div>
-              <span className="text-xs text-gray-400 dark:text-gray-500 mr-2">{session.date}</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{session.activity}</span>
-              <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">{session.duration_minutes} min</span>
-              {session.distance_km != null && (
-                <span className="text-sm text-gray-400 dark:text-gray-500 ml-1">&middot; {session.distance_km} km</span>
-              )}
-              {session.notes && (
-                <span className="text-sm text-gray-400 dark:text-gray-500 ml-1">&middot; {session.notes}</span>
-              )}
-            </div>
-            <form action={deleteSession.bind(null, session.id)}>
-              <button type="submit" className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 text-lg leading-none px-1">
-                &times;
-              </button>
-            </form>
-          </div>
-        ))}
-        {(!sessions || sessions.length === 0) && (
-          <p className="text-sm text-gray-400 dark:text-gray-600 text-center py-12">No cardio sessions logged yet.</p>
-        )}
-      </div>
+      <CardioForm
+        today={todayStr}
+        todaySchedule={SCHEDULE[todayDow]}
+        tomorrowSchedule={SCHEDULE[tomorrowDow]}
+        todayEntry={todayEntry}
+        weekDays={weekDays}
+        pastSwims={pastSwims}
+        addSwim={addSwim}
+        updateSwim={updateSwim}
+      />
     </div>
   )
 }
