@@ -32,7 +32,7 @@ export default function DietEntryList({ entries, foodItems, updateEntry, deleteE
   if (entries.length === 0) {
     return (
       <p className="text-sm text-gray-400 dark:text-gray-600 text-center py-12">
-        No food logged today.
+        Nothing logged for this day.
       </p>
     )
   }

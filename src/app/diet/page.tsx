@@ -5,15 +5,38 @@ import DietForm from './DietForm'
 import DietEntryList from './DietEntryList'
 import { entryMacros, type DietLogEntry, type FoodItem, type MealTemplate } from './types'
 
-export default async function DietPage() {
+function shiftDate(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const dt = new Date(y, m - 1, d + days)
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+}
+
+export default async function DietPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>
+}) {
   const supabase = await createClient()
   const today = new Date().toISOString().split('T')[0]
+  const { date: qDate } = await searchParams
+  const viewDate = qDate ?? today
+
+  const prevDate = shiftDate(viewDate, -1)
+  const nextDate = shiftDate(viewDate, 1)
+  const dateLabel =
+    viewDate === today
+      ? 'Today'
+      : new Date(viewDate + 'T12:00:00').toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        })
 
   const [{ data: rawEntries }, { data: rawFoods }, { data: rawTemplates }] = await Promise.all([
     supabase
       .from('diet_log_entries')
       .select('*, food_item:food_items(id, name, serving_qty, serving_unit, calories, protein_g, carbs_g, fat_g)')
-      .eq('date', today)
+      .eq('date', viewDate)
       .order('created_at', { ascending: true }),
     supabase.from('food_items').select('*').order('name'),
     supabase
@@ -132,7 +155,6 @@ export default async function DietPage() {
         .single()
       updates.food_item_id = new_food_item_id
       updates.food_name = fi?.name ?? ''
-      // Clear snapshot fields since this is now a library item
       updates.calories_snap = null
       updates.protein_snap = null
       updates.carbs_snap = null
@@ -174,6 +196,37 @@ export default async function DietPage() {
         </div>
       </div>
 
+      {/* Date navigation */}
+      <div className="flex items-center justify-between mb-5">
+        <Link
+          href={`/diet?date=${prevDate}`}
+          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Previous day"
+        >
+          ←
+        </Link>
+        <div className="flex items-center gap-3">
+          <span className={`text-sm font-medium ${viewDate === today ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-300'}`}>
+            {dateLabel}
+          </span>
+          {viewDate !== today && (
+            <Link
+              href="/diet"
+              className="text-xs text-blue-500 hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              Today
+            </Link>
+          )}
+        </div>
+        <Link
+          href={`/diet?date=${nextDate}`}
+          className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Next day"
+        >
+          →
+        </Link>
+      </div>
+
       {/* Daily totals */}
       <div className="grid grid-cols-4 gap-3 mb-6">
         {[
@@ -200,7 +253,7 @@ export default async function DietPage() {
         mealTemplates={mealTemplates}
         addFoodEntry={addFoodEntry}
         addMealEntry={addMealEntry}
-        today={today}
+        defaultDate={viewDate}
       />
 
       <DietEntryList

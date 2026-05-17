@@ -8,14 +8,15 @@ type Props = {
   mealTemplates: MealTemplate[]
   addFoodEntry: (formData: FormData) => Promise<void>
   addMealEntry: (formData: FormData) => Promise<void>
-  today: string
+  defaultDate: string
 }
 
-export default function DietForm({ foodItems, mealTemplates, addFoodEntry, addMealEntry, today }: Props) {
+export default function DietForm({ foodItems, mealTemplates, addFoodEntry, addMealEntry, defaultDate }: Props) {
+  const actualToday = new Date().toISOString().split('T')[0]
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<'food' | 'meal'>('food')
   const [category, setCategory] = useState<MealCategory>('breakfast')
-  const [date, setDate] = useState(today)
+  const [date, setDate] = useState(defaultDate)
 
   // Food-item mode
   const [search, setSearch] = useState('')
@@ -59,7 +60,7 @@ export default function DietForm({ foodItems, mealTemplates, addFoodEntry, addMe
     setOpen(false)
     setMode('food')
     setCategory('breakfast')
-    setDate(today)
+    setDate(defaultDate)
     setSearch('')
     setSelectedFood(null)
     setServings('1')
@@ -135,7 +136,7 @@ export default function DietForm({ foodItems, mealTemplates, addFoodEntry, addMe
               onChange={e => setDate(e.target.value)}
               className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            {date !== today && (
+            {date !== actualToday && (
               <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
                 Logging for {date} — not today
               </p>
