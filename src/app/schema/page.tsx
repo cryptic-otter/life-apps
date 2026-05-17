@@ -93,6 +93,15 @@ erDiagram
         numeric weight_lbs
     }
 
+    meal_plan_entries {
+        uuid id PK
+        uuid user_id FK
+        date date
+        text meal_category
+        text note
+        boolean is_covered
+    }
+
     auth_users ||--o{ food_items : "owns"
     auth_users ||--o{ meal_templates : "owns"
     auth_users ||--o{ diet_log_entries : "owns"
@@ -100,6 +109,7 @@ erDiagram
     auth_users ||--o{ cardio_sessions : "owns"
     auth_users ||--o{ exercises : "owns"
     auth_users ||--o{ strength_sets : "owns"
+    auth_users ||--o{ meal_plan_entries : "owns"
     meal_templates ||--o{ meal_template_items : "contains"
     food_items ||--o{ meal_template_items : "referenced by"
     food_items ||--o{ diet_log_entries : "logged as"
@@ -142,6 +152,11 @@ const tables = [
   {
     name: 'strength_sets',
     description: 'One row per set per session. Tracks exercise, muscle group, sets, reps, and weight in lbs.',
+  },
+  {
+    name: 'meal_plan_entries',
+    description:
+      'Weekly meal coverage plan — one row per meal slot per day. Tracks whether each meal is sorted for the week. Slots already logged in diet_log_entries are auto-marked covered at display time.',
   },
 ]
 

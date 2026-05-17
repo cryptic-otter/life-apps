@@ -114,6 +114,16 @@ erDiagram
         timestamptz created_at
     }
 
+    meal_plan_entries {
+        uuid id PK
+        uuid user_id FK
+        date date
+        text meal_category
+        text note
+        boolean is_covered
+        timestamptz created_at
+    }
+
     auth_users ||--o{ food_items : "owns"
     auth_users ||--o{ meal_templates : "owns"
     auth_users ||--o{ diet_log_entries : "owns"
@@ -121,6 +131,7 @@ erDiagram
     auth_users ||--o{ cardio_sessions : "owns"
     auth_users ||--o{ exercises : "owns"
     auth_users ||--o{ strength_sets : "owns"
+    auth_users ||--o{ meal_plan_entries : "owns"
     meal_templates ||--o{ meal_template_items : "contains"
     food_items ||--o{ meal_template_items : "referenced by"
     food_items ||--o{ diet_log_entries : "logged as"
@@ -139,6 +150,7 @@ erDiagram
 | `cardio_sessions` | One row per swim session; tracks distance, planned vs actual, sleep quality, and fuel level |
 | `exercises` | Exercise library — reusable exercises tagged with a muscle group (back, bis, chest, tris, shoulders, legs) |
 | `strength_sets` | One row per set per session; tracks exercise, muscle group, sets, reps, and weight in lbs |
+| `meal_plan_entries` | Weekly meal coverage plan — one row per meal slot per day. Tracks note and covered status. Slots already logged in `diet_log_entries` are auto-marked covered at display time |
 
 ## Row-Level Security
 

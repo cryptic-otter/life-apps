@@ -38,7 +38,7 @@ The `SUPABASE_ACCESS_TOKEN` is stored in two local-only files that are **never c
 
 ## Architecture
 
-Personal productivity suite — diet, strength, and cardio trackers — built as a single Next.js app deployed on Vercel with Supabase as the backend.
+Personal productivity suite — diet, strength, cardio, and meal planning trackers — built as a single Next.js app deployed on Vercel with Supabase as the backend.
 
 ### Page + Form pattern
 
@@ -58,6 +58,16 @@ The cardio page is built around a fixed weekly swim schedule. It uses an extra s
 - **`src/app/cardio/schedule.ts`** — exports `SCHEDULE` (the weekly plan), types (`DaySchedule`, `SwimEntry`, `WeekDay`), and `getRowStatus`. **Do not modify the schedule without discussing with the user first** — it reflects their actual training programme.
 
 Requirements for the cardio redesign live in `docs/CARDIO_REQUIREMENTS.md`.
+
+### Meal planner — inline cell pattern
+
+`src/app/meal-plan/` deviates from the standard Page + Form pattern because every cell in the 7×6 grid saves independently. Instead of a single form, `MealPlanGrid.tsx` renders one `<form>` per editable cell; each form fires the shared `upsertPlanEntry` Server Action on checkbox change or note input blur.
+
+The page merges two data sources server-side before rendering:
+- `diet_log_entries` for the current week — any matching `(date, meal_category)` slot renders as read-only "Logged" with a green background
+- `meal_plan_entries` — stores manually entered notes and covered status
+
+Upserts use `onConflict: 'user_id,date,meal_category'` so re-submitting a cell is always safe. Requirements live in `docs/MEAL_PLAN_REQUIREMENTS.md`.
 
 ### Two Supabase clients — use the right one
 
