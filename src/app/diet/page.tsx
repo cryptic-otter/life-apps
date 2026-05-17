@@ -47,7 +47,7 @@ export default async function DietPage() {
     const food_item_id = formData.get('food_item_id') as string
     const servings = Number(formData.get('servings')) || 1
     const meal_category = formData.get('meal_category') as string
-    const date = new Date().toISOString().split('T')[0]
+    const date = (formData.get('date') as string | null) ?? new Date().toISOString().split('T')[0]
     const { data: fi } = await supabase
       .from('food_items')
       .select('name')
@@ -70,6 +70,7 @@ export default async function DietPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const meal_category = formData.get('meal_category') as string
+    const date = (formData.get('date') as string | null) ?? new Date().toISOString().split('T')[0]
     const itemsJson = formData.get('items') as string
     const items: Array<{
       food_item_id?: string
@@ -82,7 +83,6 @@ export default async function DietPage() {
       carbs_g?: number | null
       fat_g?: number | null
     }> = JSON.parse(itemsJson)
-    const date = new Date().toISOString().split('T')[0]
 
     const libraryIds = items.filter(i => i.food_item_id).map(i => i.food_item_id as string)
     let nameMap: Record<string, string> = {}
@@ -200,6 +200,7 @@ export default async function DietPage() {
         mealTemplates={mealTemplates}
         addFoodEntry={addFoodEntry}
         addMealEntry={addMealEntry}
+        today={today}
       />
 
       <DietEntryList
