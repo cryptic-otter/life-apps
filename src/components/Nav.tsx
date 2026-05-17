@@ -23,6 +23,7 @@ export default async function Nav() {
           <Link href="/diet" className="text-sm text-gray-600 hover:text-gray-900">Diet</Link>
           <Link href="/strength" className="text-sm text-gray-600 hover:text-gray-900">Strength</Link>
           <Link href="/cardio" className="text-sm text-gray-600 hover:text-gray-900">Cardio</Link>
+          <Link href="/meal-plan" className="text-sm text-gray-600 hover:text-gray-900">Meal Plan</Link>
           <Link href="/schema" className="text-sm text-gray-600 hover:text-gray-900">Schema</Link>
         </div>
         <form action={signOut}>
