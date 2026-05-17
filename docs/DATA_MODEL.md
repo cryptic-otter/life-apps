@@ -92,14 +92,24 @@ erDiagram
         timestamptz created_at
     }
 
+    exercises {
+        uuid id PK
+        uuid user_id FK
+        text name
+        text muscle_group
+        timestamptz created_at
+    }
+
     strength_sets {
         uuid id PK
         uuid user_id FK
         date date
         text exercise
+        uuid exercise_id FK
+        text muscle_group
         int sets
         int reps
-        numeric weight_kg
+        numeric weight_lbs
         text notes
         timestamptz created_at
     }
@@ -109,10 +119,12 @@ erDiagram
     auth_users ||--o{ diet_log_entries : "owns"
     auth_users ||--o{ diet_entries : "owns"
     auth_users ||--o{ cardio_sessions : "owns"
+    auth_users ||--o{ exercises : "owns"
     auth_users ||--o{ strength_sets : "owns"
     meal_templates ||--o{ meal_template_items : "contains"
     food_items ||--o{ meal_template_items : "referenced by"
     food_items ||--o{ diet_log_entries : "logged as"
+    exercises ||--o{ strength_sets : "logged as"
 ```
 
 ## Table Descriptions
@@ -125,7 +137,8 @@ erDiagram
 | `diet_log_entries` | Daily food log — each row is one food eaten at one meal. Macros are snapshotted at log time so historical records are stable even if `food_items` changes |
 | `diet_entries` | **Legacy** — replaced by `diet_log_entries`. Kept for historical data only |
 | `cardio_sessions` | One row per swim session; tracks distance, planned vs actual, sleep quality, and fuel level |
-| `strength_sets` | One row per exercise per session; tracks sets, reps, and weight |
+| `exercises` | Exercise library — reusable exercises tagged with a muscle group (back, bis, chest, tris, shoulders, legs) |
+| `strength_sets` | One row per set per session; tracks exercise, muscle group, sets, reps, and weight in lbs |
 
 ## Row-Level Security
 

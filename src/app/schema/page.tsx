@@ -74,14 +74,23 @@ erDiagram
         boolean is_off_plan
     }
 
+    exercises {
+        uuid id PK
+        uuid user_id FK
+        text name
+        text muscle_group
+    }
+
     strength_sets {
         uuid id PK
         uuid user_id FK
         date date
         text exercise
+        uuid exercise_id FK
+        text muscle_group
         int sets
         int reps
-        numeric weight_kg
+        numeric weight_lbs
     }
 
     auth_users ||--o{ food_items : "owns"
@@ -89,10 +98,12 @@ erDiagram
     auth_users ||--o{ diet_log_entries : "owns"
     auth_users ||--o{ diet_entries : "owns"
     auth_users ||--o{ cardio_sessions : "owns"
+    auth_users ||--o{ exercises : "owns"
     auth_users ||--o{ strength_sets : "owns"
     meal_templates ||--o{ meal_template_items : "contains"
     food_items ||--o{ meal_template_items : "referenced by"
     food_items ||--o{ diet_log_entries : "logged as"
+    exercises ||--o{ strength_sets : "logged as"
 `
 
 const tables = [
@@ -125,8 +136,12 @@ const tables = [
       'One row per swim session. Tracks actual vs planned distance, sleep quality, and fuel level.',
   },
   {
+    name: 'exercises',
+    description: 'Exercise library — reusable exercises tagged with a muscle group (back, bis, chest, tris, shoulders, legs).',
+  },
+  {
     name: 'strength_sets',
-    description: 'One row per exercise per session. Tracks sets, reps, and weight.',
+    description: 'One row per set per session. Tracks exercise, muscle group, sets, reps, and weight in lbs.',
   },
 ]
 
